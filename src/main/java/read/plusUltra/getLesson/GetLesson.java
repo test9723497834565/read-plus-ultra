@@ -26,7 +26,7 @@ public class GetLesson {
 		this.call = new SimpleJdbcCall(jdbcTemplate)
 					.withSchemaName("plus_ultra")
 					.withCatalogName("read")
-					.withProcedureName(" read_actor");
+					.withProcedureName("...");
 	}
 	
 	@PostMapping("/get-lesson")
