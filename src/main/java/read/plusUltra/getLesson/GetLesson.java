@@ -23,19 +23,17 @@ public class GetLesson {
 
 	@Autowired
 	public GetLesson(JdbcTemplate jdbcTemplate) {
-		this.call = new SimpleJdbcCall(jdbcTemplate).withProcedureName("read_actor");
+		this.call = new SimpleJdbcCall(jdbcTemplate)
+					.withSchemaName("")
+					.withCatalogName("")
+					.withProcedureName("read_actor");
 	}
 	
-	@PostMapping("/flat-bi-directional")
-	RestFlat flatBiDirectional(@RequestBody RestFlat request, @RequestHeader HttpHeaders headers) {		
+	@PostMapping("/get-lesson")
+	GetLessonResponse flatBiDirectional(@RequestBody GetLessonResponse request) {		
+		log.info("get-lesson");
 		
-		String header = headers.getFirst("PPAUTH");
-		
-		log.info("PPAUTH = " + header);
-		
-		return new RestFlat(request.getName()+" response", request.getAge()+100,
-				new Date(request.getDate().getTime()+1000*60*60*24*36)
-				);
+		return new GetLessonResponse();
 	}
 
 
