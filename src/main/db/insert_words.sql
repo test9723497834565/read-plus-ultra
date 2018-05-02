@@ -5636,7 +5636,6 @@ insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(word
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'cuir',null,null,null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'preuve',null,null,null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'fi','gu','rant',null,null,null,null,null,null);
-insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'p',null,null,null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'fou','tu',null,null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'la','by','rinthe',null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'ou','ver','ture',null,null,null,null,null,null);
@@ -6960,7 +6959,6 @@ insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(word
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'mâ','cher',null,null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'dor','mant',null,null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'ca','mé','lé','on',null,null,null,null,null);
-insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'et','ce','te','ra',null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'mo','des','tie',null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'pa','tate',null,null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'rha','bi','ller',null,null,null,null,null,null);
