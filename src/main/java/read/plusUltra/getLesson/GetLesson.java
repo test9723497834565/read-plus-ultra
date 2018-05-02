@@ -24,9 +24,9 @@ public class GetLesson {
 	@Autowired
 	public GetLesson(JdbcTemplate jdbcTemplate) {
 		this.call = new SimpleJdbcCall(jdbcTemplate)
-					.withSchemaName("")
-					.withCatalogName("")
-					.withProcedureName("read_actor");
+					.withSchemaName("plus_ultra")
+					.withCatalogName("read")
+					.withProcedureName(" read_actor");
 	}
 	
 	@PostMapping("/get-lesson")
