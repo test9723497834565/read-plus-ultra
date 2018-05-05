@@ -14,3 +14,4 @@ grant connect to plus_ultra;
 grant create table to plus_ultra;
 grant create sequence to plus_ultra;
 grant unlimited tablespace to plus_ultra;
+grant create procedure to plus_ultra;

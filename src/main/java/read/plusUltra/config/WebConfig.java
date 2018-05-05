@@ -15,7 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
 
 			@Override
 			public void addViewControllers(ViewControllerRegistry registry) {
-				registry.addViewController("/").setViewName("reading_speed.html");
+				registry.addViewController("/").setViewName("plus-ultra.html");
 			}
 
 		};

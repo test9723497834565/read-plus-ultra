@@ -1,0 +1,12 @@
+create or replace package body plus_ultra.read as 
+
+  procedure get_words(o_words in out sys_refcursor)
+  is
+  begin
+    open o_words for
+      select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from (
+        select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from words_to_read order by freq desc
+      ) a where rownum < 10;
+  end get_words;
+
+end read;
