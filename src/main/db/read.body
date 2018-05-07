@@ -1,8 +1,56 @@
-create or replace package body plus_ultra.read as 
+create or replace package body plus_ultra.read as
+
 
   procedure get_words(o_words in out sys_refcursor)
   is
+    l_level     number;
   begin
+  
+    -- which is the last not completed level
+    begin
+      select id into l_level from read_level where ended is null;
+      update read_level set last_started = sysdate where id = l_level;
+	exception
+	  when no_data_found then
+	    -- level does not exists, let's create it
+	    select coalesce(max(id),0) + 1 into l_level from read_level;
+	    insert into read_level (id, started, last_started) values (l_level, sysdate, sysdate);
+	    
+	    copied
+	    for rec in (select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from (
+        			  select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from words_to_read order by freq desc
+      				) a where rownum < 10
+      	) loop
+      	  update words_to_read set copied = 'Y' where id = rec.id;
+      	  insert into word (id, mastered, read_level_id) values (id_gen_seq.nextval, c_not_practiced, l_level);
+ 		  if rec.s1 is not null then
+ 		    
+ 		  end if;
+      	end loop;
+	    
+    end;
+
+	-- select syllables to be studied  
+  	select c.id, c.text 
+	from word a 
+	join word_syllable b on (a.id = b.word_id)
+	join syllable c on (b.syllable_id = c.id)
+	where a.read_level_id = l_level
+	and c.mastered != c_mastered
+	order by c.mastered, c.last_studied;
+
+	-- select words to be studied
+    select a.id, a.mastered, a.last_studied, LISTAGG(c.text, '-LEVEL-') WITHIN GROUP (ORDER BY b.syllable_order) as w
+    from word a 
+    join word_syllable b on (a.id = b.word_id)
+    join syllable c on (b.syllable_id = c.id)
+    where a.read_level_id = l_level
+    and a.mastered != c_mastered
+    group by a.id, a.mastered, a.last_studied
+    order by a.mastered, a.last_studied;
+  
+  
+  
     open o_words for
       select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from (
         select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from words_to_read order by freq desc

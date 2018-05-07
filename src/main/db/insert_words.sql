@@ -10735,3 +10735,5 @@ insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(word
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'suite',null,null,null,null,null,null,null,null);
 insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(words_to_read_seq.nextval, 'ca','ta','logue',null,null,null,null,null,null);
 commit;
+update plus_ultra.words_to_read set copied = 'N';
+commit;
