@@ -1,12 +1,14 @@
 create or replace package body plus_ultra.read as
 
+  c_words_per_level   constant number := 10;
+  
   procedure insert_syllable(
     i_word_id   word.id%type
    ,i_syllable  words_to_read.s1%type
    ,i_order     word_syllable.syllable_order%type
   )
   is
-    l_id        id_gen_seq%type;
+    l_id        number;
   begin
     if i_syllable is null then
       return;
@@ -19,8 +21,8 @@ create or replace package body plus_ultra.read as
 
   procedure get_words(o_words in out sys_refcursor)
   is
-    l_level     real_level.id%type;
-    l_id        id_gen_seq%type;
+    l_level     read_level.id%type;
+    l_id        number;
   begin
     -- which is the last not completed level
     begin
@@ -35,7 +37,7 @@ create or replace package body plus_ultra.read as
 	    -- copy some rows from words_to_read and insert them into words and syllables.
 	    for rec in (select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from (
         			  select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from words_to_read order by freq desc
-      				) a where rownum < 10
+      				) a where rownum < c_words_per_level
       	) loop
       	  update words_to_read set copied = 'Y' where id = rec.id;
           select id_gen_seq.nextval into l_id from dual;
@@ -50,26 +52,36 @@ create or replace package body plus_ultra.read as
           insert_syllable(l_id, rec.s8, 8);
           insert_syllable(l_id, rec.s9, 9);
       	end loop;
-    end;
+  end;
 
-	-- select syllables to be studied  
-  	select c.id, c.text 
+  -- add random revisions up to 30% of c_words_per_level
+  if l_level > 1 then
+    update word set read_level_id = l_level where id in (
+      select id from (
+        select id from word where read_level_id != l_level order by dbms_random.value
+      ) a where rownum <= round(c_words_per_level * 0.3)
+    );
+  end if;
+  
+	-- select syllables to be studied in level
+  select c.id, c.text, max(c.mastered) mastered, max(c.last_studied) last_studied
 	from word a 
 	join word_syllable b on (a.id = b.word_id)
 	join syllable c on (b.syllable_id = c.id)
 	where a.read_level_id = l_level
 	and c.mastered != c_mastered
-	order by c.mastered, c.last_studied;
+  group by c.id, c.text
+	order by mastered, last_studied;
 
-	-- select words to be studied
-    select a.id, a.mastered, a.last_studied, LISTAGG(c.text, '-LEVEL-') WITHIN GROUP (ORDER BY b.syllable_order) as w
-    from word a 
-    join word_syllable b on (a.id = b.word_id)
-    join syllable c on (b.syllable_id = c.id)
-    where a.read_level_id = l_level
-    and a.mastered != c_mastered
-    group by a.id, a.mastered, a.last_studied
-    order by a.mastered, a.last_studied;
+	-- select words to be studied in level
+  select a.id, a.mastered, a.last_studied, listagg(c.text, decode(a.mastered, 0, '   ', 1 ,'  ', 2, ' ', '')) within group (order by b.syllable_order) as w
+  from word a 
+  join word_syllable b on (a.id = b.word_id)
+  join syllable c on (b.syllable_id = c.id)
+  where a.read_level_id = l_level
+  and a.mastered != c_mastered
+  group by a.id, a.mastered, a.last_studied
+  order by a.mastered, a.last_studied;
   
   
   
