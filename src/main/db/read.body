@@ -1,11 +1,27 @@
 create or replace package body plus_ultra.read as
 
+  procedure insert_syllable(
+    i_word_id   word.id%type
+   ,i_syllable  words_to_read.s1%type
+   ,i_order     word_syllable.syllable_order%type
+  )
+  is
+    l_id        id_gen_seq%type;
+  begin
+    if i_syllable is null then
+      return;
+    end if;
+    select id_gen_seq.nextval into l_id from dual;
+    insert into syllable (id, mastered, text) values(l_id, c_not_practiced, i_syllable);
+    insert into word_syllable (word_id, syllable_id, syllable_order) values (i_word_id, l_id, i_order);
+  end insert_syllable;
+
 
   procedure get_words(o_words in out sys_refcursor)
   is
-    l_level     number;
+    l_level     real_level.id%type;
+    l_id        id_gen_seq%type;
   begin
-  
     -- which is the last not completed level
     begin
       select id into l_level from read_level where ended is null;
@@ -16,18 +32,24 @@ create or replace package body plus_ultra.read as
 	    select coalesce(max(id),0) + 1 into l_level from read_level;
 	    insert into read_level (id, started, last_started) values (l_level, sysdate, sysdate);
 	    
-	    copied
+	    -- copy some rows from words_to_read and insert them into words and syllables.
 	    for rec in (select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from (
         			  select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from words_to_read order by freq desc
       				) a where rownum < 10
       	) loop
       	  update words_to_read set copied = 'Y' where id = rec.id;
-      	  insert into word (id, mastered, read_level_id) values (id_gen_seq.nextval, c_not_practiced, l_level);
- 		  if rec.s1 is not null then
- 		    
- 		  end if;
+          select id_gen_seq.nextval into l_id from dual;
+      	  insert into word (id, mastered, read_level_id) values (l_id, c_not_practiced, l_level);
+          insert_syllable(l_id, rec.s1, 1);
+          insert_syllable(l_id, rec.s2, 2);
+          insert_syllable(l_id, rec.s3, 3);
+          insert_syllable(l_id, rec.s4, 4);
+          insert_syllable(l_id, rec.s5, 5);
+          insert_syllable(l_id, rec.s6, 6);
+          insert_syllable(l_id, rec.s7, 7);
+          insert_syllable(l_id, rec.s8, 8);
+          insert_syllable(l_id, rec.s9, 9);
       	end loop;
-	    
     end;
 
 	-- select syllables to be studied  
