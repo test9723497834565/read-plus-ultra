@@ -72,6 +72,7 @@ create or replace package body plus_ultra.read as
         join syllable c on (b.syllable_id = c.id)
         where a.read_level_id = 1
         and c.mastered != 3
+        and 1 != (select count(*) from word_syllable where word_id = a.id)
         group by c.id, c.text
         order by mastered, last_studied
       )
