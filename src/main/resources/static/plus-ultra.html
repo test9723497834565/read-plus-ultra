@@ -13,9 +13,7 @@
   
    <script type="text/javascript">
         var v;
-      window.onload = function () {
-        
-        
+      window.onload = function () { 
         v = new Vue({
            el: '#app',
            data: {
@@ -25,11 +23,22 @@
              syllables: null
            },
            methods: {
-             next: function() {
-               console.log('next: show=' + this.show);
-               //this.message = this.syllables[this.idx];
+        	 start: function() {
+               console.log('start: show=' + this.show);
+               // this triggers the animation for the next item
                this.show = false;
+             },
+             next: function(success) {
+               console.log('next: show=' + this.show + "  success=" + success);
                
+               this.syllables[this.idx].ended = new Date();
+               this.syllables[this.idx].readSuccessfully = success;
+               
+               console.log('sendStats before call');
+               axios.post('/send-stats', this.syllables[this.idx]);
+               
+               // this triggers the animation for the next item
+               this.show = false;
              },
              afterLeave: function () {
                console.log('afterLeave1  show=' + this.show +'   this.idx=' + this.idx + '    this.syllables.length='+ this.syllables.length);
@@ -44,6 +53,18 @@
                this.message = this.syllables[this.idx].text;
                console.log('this.message = ' + this.syllables[this.idx].text);
                this.show = true;
+               this.syllables[this.idx].started = new Date(new Date().getTime() + 1000);  // 1 second extra to account for animation
+             },
+             listenKeyPress: function(event) {
+           	   console.log('key pressed: ' + event.which)
+           	   switch (event.which) {
+           	     case 78: // n : non, il n'a pas réussi à lire
+           	    	this.next(false); break;
+           	     case 79: // o : oui, il a réussi à lire
+           	    	this.next(true); break;
+           	     default: 
+           	    	 null;
+           	   }   
              }
            },
            beforeCreate : function() {
@@ -58,7 +79,10 @@
                       console.log('getLesson error');
                       console.log(error);
                     });
-             }
+             },
+           created: function () {
+             window.addEventListener('keyup', this.listenKeyPress)
+           }
          });
          
          
@@ -69,15 +93,17 @@
 <body>
 
   <section id="app" class="hero is-primary is-fullheight">
+    
     <div class="hero-head">
-      <button class="button is-success" @click="next">next</button>
+      <button class="button is-success" @click="start">start</button>
+      
     </div>
+    
     <div class="hero-body">
       <div class="container has-text-centered">
         <div class="columns">
           <div class="column"></div>
           <div class="column is-one-quarter">
-            
             
             <transition
                name="custom-classes-transition"
@@ -92,6 +118,20 @@
         </div>
       </div>
     </div>
+    
+    <div class="hero-foot">
+      <nav class="tabs is-boxed is-fullwidth">
+        <div class="container has-text-centered">
+          <ul>
+            <li></li>
+            <li><span @click="next(true)"><i class="fas fa-check fa-3x"></i></span></li>
+            <li><span @click="next(false)"><i class="fas fa-times fa-3x"></i></span></li>
+            <li></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  
   </section>
 </body>
 </html>

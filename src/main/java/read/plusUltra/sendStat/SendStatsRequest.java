@@ -11,7 +11,13 @@ public class SendStatsRequest {
 	private Date ended;
 	private boolean readSuccessfully;
 	
+	public SendStatsRequest() {
+		// required
+	}
+	
+
 	public SendStatsRequest(int id, String text, String type, Date started, Date ended, boolean readSuccessfully) {
+		super();
 		this.id = id;
 		this.text = text;
 		this.type = type;
@@ -20,13 +26,19 @@ public class SendStatsRequest {
 		this.readSuccessfully = readSuccessfully;
 	}
 
+	
+	
 	public int getId() {
 		return id;
 	}
 
+
+
 	public void setId(int id) {
 		this.id = id;
 	}
+
+
 
 	public String getText() {
 		return text;
