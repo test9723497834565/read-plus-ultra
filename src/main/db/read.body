@@ -1,6 +1,7 @@
 create or replace package body plus_ultra.read as
 
   c_words_per_level   constant number := 10;
+  c_revision_percent  constant number := 0.3; -- 30%
   
   procedure insert_syllable(
     i_word_id   word.id%type
@@ -16,6 +17,9 @@ create or replace package body plus_ultra.read as
     select id_gen_seq.nextval into l_id from dual;
     insert into syllable (id, mastered, text) values(l_id, c_not_practiced, i_syllable);
     insert into word_syllable (word_id, syllable_id, syllable_order) values (i_word_id, l_id, i_order);
+  exception
+    when others then
+      raise;
   end insert_syllable;
 
 
@@ -59,35 +63,86 @@ create or replace package body plus_ultra.read as
       update word set read_level_id = l_level where id in (
         select id from (
           select id from word where read_level_id != l_level order by dbms_random.value
-        ) a where rownum <= round(c_words_per_level * 0.3)
+        ) a where rownum <= round(c_words_per_level * c_revision_percent)
       );
     end if;
     
     open o_words for
-      select id, text, 's' type from (
+      select id, text, c_syllable type from (
         -- select syllables to be studied in level
         select c.id, c.text, max(c.mastered) mastered, max(c.last_studied) last_studied
         from word a 
         join word_syllable b on (a.id = b.word_id)
         join syllable c on (b.syllable_id = c.id)
-        where a.read_level_id = 1
-        and c.mastered != 3
+        where a.read_level_id = l_level
+        and c.mastered != c_mastered
         and 1 != (select count(*) from word_syllable where word_id = a.id)
         group by c.id, c.text
         order by mastered, last_studied
       )
     union all
-      select id, text, 'w' type from ( 
+      select id, text, c_word type from ( 
         -- select words to be studied in level
-        select a.id, a.mastered, a.last_studied, listagg(c.text, decode(a.mastered, 0, '   ', 1 ,'  ', 2, ' ', '')) within group (order by b.syllable_order) as text
+        select a.id, a.mastered, a.last_studied, 
+        listagg(c.text, decode(a.mastered, c_not_practiced, '   ', c_practiced ,'  ', c_improving, ' ', '')) within group (order by b.syllable_order) as text
         from word a 
         join word_syllable b on (a.id = b.word_id)
         join syllable c on (b.syllable_id = c.id)
-        where a.read_level_id = 1
-        and a.mastered != 3
+        where a.read_level_id = l_level
+        and a.mastered != c_mastered
         group by a.id, a.mastered, a.last_studied
         order by a.mastered, a.last_studied
     );
+  exception
+    when others then
+      raise;
   end get_words;
+  
+  
+  procedure send_stats(
+	  i_id       number   
+	 ,i_text     varchar2
+	 ,i_type     varchar2
+	 ,i_start    date
+	 ,i_end      date
+	 ,i_read     varchar2)
+  is
+    l_mastered     number;
+    l_sec_elpased  number;
+  begin
+    -- compute mastered level
+    if i_read = '-' then
+      l_mastered := c_practiced;
+    elsif i_read = '+' then
+      l_sec_elpased := (i_end - i_start) * 24.0 * 60.0 * 60.0;
+      
+      if l_sec_elpased < 3.0 then
+        l_mastered := c_mastered;
+      elsif l_sec_elpased < 5.0 then
+        l_mastered := c_improving;
+      else
+        l_mastered := c_practiced;
+      end if;
+    end if;
+  
+    -- update last studied and mastered
+    case i_type
+      when c_word then
+        update word set last_studied = sysdate, mastered = l_mastered where id = i_id;
+        update syllable set last_studied = sysdate where id in (select syllable_id from word_syllable where word_id = i_id);
+      when c_syllable then
+        update syllable set last_studied = sysdate, mastered = l_mastered where id = i_id;
+      else null;
+    end case;
+    
+    -- add to stats
+    insert into read_stat (id, time_start, time_end, type) values (i_id, i_start, i_end, i_type);
+    commit;
+  exception
+    when others then
+      raise;
+  end send_stats;
 
 end read;
+
+

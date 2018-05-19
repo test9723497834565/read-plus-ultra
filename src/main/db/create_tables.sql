@@ -56,5 +56,6 @@ create table plus_ultra.read_stat (
   id		    number
  ,time_start	date
  ,time_end		date
+ ,type          varchar2(1)
 );
 
