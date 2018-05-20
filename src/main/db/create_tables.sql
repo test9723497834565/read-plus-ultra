@@ -59,3 +59,9 @@ create table plus_ultra.read_stat (
  ,type          varchar2(1)
 );
 
+create table plus_ultra.session_stat (
+  session_type  varchar2(50)
+ ,time_start	date
+ ,time_end		date
+ ,time_end_temp	date
+ );

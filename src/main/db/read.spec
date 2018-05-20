@@ -19,5 +19,10 @@ create or replace package plus_ultra.read as
 	 ,i_start    date
 	 ,i_end      date
 	 ,i_read     varchar2);
+   
+  procedure start_session(
+	  i_session_type     varchar2
+	 ,i_start            date
+  );
 
 end read;

@@ -12,7 +12,7 @@
   <script type="text/javascript" src="/webjars/vue/dist/vue.min.js"></script>
   
    <script type="text/javascript">
-        var v;
+      var v;
       window.onload = function () { 
         v = new Vue({
            el: '#app',
@@ -20,13 +20,31 @@
              message: '',
              show:    true,
              idx:     -1,
-             syllables: null
+             syllables: null,
+             started: false,
+             lastChange: new Date()
            },
            methods: {
+             heartBeat: function() {
+            	var lastActivity = new Date().getTime() - this.lastChange.getTime();
+            	if (lastActivity > 55000) {
+            	  // learning activity has been abandoned
+            	  location.reload();
+            	}
+            	else {
+            	  // learning activity is in progress
+            	  axios.post('/start-session', {sessionType: 'read', start: new Date()});
+            	  setTimeout(() => { this.heartBeat(); }, 60000);
+            	}
+             },
         	 start: function() {
-               console.log('start: show=' + this.show);
-               // this triggers the animation for the next item
-               this.show = false;
+        	   if (!this.started) {
+        		 this.started = true;
+                 console.log('start: show=' + this.show);
+                 // this triggers the animation for the next item
+                 this.show = false;
+                 this.heartBeat();
+        	   }
              },
              next: function(success) {
                console.log('next: show=' + this.show + "  success=" + success);
@@ -35,7 +53,8 @@
                this.syllables[this.idx].readSuccessfully = success;
                
                console.log('sendStats before call');
-               axios.post('/send-stats', this.syllables[this.idx]);
+               setTimeout(() => {axios.post('/send-stats', this.syllables[this.idx]) });
+               
                
                // this triggers the animation for the next item
                this.show = false;
@@ -54,6 +73,7 @@
                console.log('this.message = ' + this.syllables[this.idx].text);
                this.show = true;
                this.syllables[this.idx].started = new Date(new Date().getTime() + 1000);  // 1 second extra to account for animation
+               this.lastChange = new Date();
              },
              listenKeyPress: function(event) {
            	   console.log('key pressed: ' + event.which)
@@ -85,9 +105,7 @@
            }
          });
          
-         
-      };
-      
+      };      
    </script>
 </head>
 <body>
@@ -96,7 +114,6 @@
     
     <div class="hero-head">
       <button class="button is-success" @click="start">start</button>
-      
     </div>
     
     <div class="hero-body">

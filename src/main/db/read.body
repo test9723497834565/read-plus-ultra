@@ -143,6 +143,44 @@ create or replace package body plus_ultra.read as
       raise;
   end send_stats;
 
+
+  procedure start_session(
+	  i_session_type     varchar2
+	 ,i_start            date
+  )
+  is
+    l_row_id        rowid;
+    l_last_time     date;
+    l_sec_elpased   number;
+    
+  begin
+    -- find a previous session
+    begin
+      select rowid, coalesce(time_end_temp, time_start) into l_row_id, l_last_time 
+      from session_stat where session_type = i_session_type and time_end is null;
+              
+      l_sec_elpased := (i_start - l_last_time) * 24.0 * 60.0 * 60.0;
+      
+      if l_sec_elpased < 70 then
+        -- update last time
+        update session_stat set time_end_temp = i_start where rowid = l_row_id;
+      else
+        -- close last session
+        update session_stat set time_end = time_end_temp where rowid = l_row_id;
+        insert into session_stat (session_type, time_start) values (i_session_type, i_start);
+      end if;
+      
+    exception
+      when no_data_found then
+        insert into session_stat (session_type, time_start) values (i_session_type, i_start);
+    end;
+    
+    commit;
+  exception
+    when others then
+      raise;
+  end start_session;
+
 end read;
 
 
