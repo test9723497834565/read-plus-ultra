@@ -109,12 +109,20 @@ create or replace package body plus_ultra.read as
   is
     l_mastered     number;
     l_sec_elpased  number;
+    l_past_avg     number;
   begin
     -- compute mastered level
     if i_read = '-' then
       l_mastered := c_practiced;
     elsif i_read = '+' then
       l_sec_elpased := (i_end - i_start) * 24.0 * 60.0 * 60.0;
+      
+      -- select a weighted on past tries
+      select coalesce(sum(sec)/ sum(idx),0) into l_past_avg from (
+        select rownum as idx, (time_end-time_start)*60*60*24*rownum as sec from read_stat where id = i_id order by time_start desc
+      ) where rownum <= 3;
+      
+      l_sec_elpased := (l_sec_elpased + l_past_avg) / 2.0;
       
       if l_sec_elpased < 3.0 then
         l_mastered := c_mastered;
@@ -149,6 +157,13 @@ create or replace package body plus_ultra.read as
 	 ,i_start            date
   )
   is
+    type sessions is record (
+      row_id      rowid
+     ,last_time   session_stat.time_start%TYPE
+    );
+    type past_sessions is table of sessions;
+    l_past_sessions   past_sessions;
+  
     l_row_id        rowid;
     l_last_time     date;
     l_sec_elpased   number;
@@ -156,8 +171,16 @@ create or replace package body plus_ultra.read as
   begin
     -- find a previous session
     begin
-      select rowid, coalesce(time_end_temp, time_start) into l_row_id, l_last_time 
-      from session_stat where session_type = i_session_type and time_end is null;
+      select rowid, coalesce(time_end_temp, time_start) bulk collect into l_past_sessions
+      from session_stat where session_type = i_session_type and time_end is null order by time_start;
+      
+      for rec in l_past_sessions.first..l_past_sessions.last-1 loop
+        update session_stat set time_end = time_start where rowid = l_past_sessions(rec).row_id;
+      end loop;
+      
+      l_row_id := l_past_sessions(l_past_sessions.last).row_id;
+      l_last_time := l_past_sessions(l_past_sessions.last).last_time;
+      
               
       l_sec_elpased := (i_start - l_last_time) * 24.0 * 60.0 * 60.0;
       
@@ -180,6 +203,25 @@ create or replace package body plus_ultra.read as
     when others then
       raise;
   end start_session;
+  
+  
+  procedure stop_session(
+	  i_session_type     varchar2
+	 ,i_stop             date
+  )
+  is
+    l_row_id        rowid;
+    l_last_time     date;
+    l_sec_elpased   number;
+    
+  begin
+    -- close last session
+    update session_stat set time_end = i_stop where session_type = i_session_type;
+    commit;
+  exception
+    when others then
+      raise;
+  end stop_session;
 
 end read;
 

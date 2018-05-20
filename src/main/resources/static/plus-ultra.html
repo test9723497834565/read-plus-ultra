@@ -26,20 +26,34 @@
            },
            methods: {
              heartBeat: function() {
-            	var lastActivity = new Date().getTime() - this.lastChange.getTime();
-            	if (lastActivity > 55000) {
-            	  // learning activity has been abandoned
-            	  location.reload();
-            	}
-            	else {
-            	  // learning activity is in progress
-            	  axios.post('/start-session', {sessionType: 'read', start: new Date()});
-            	  setTimeout(() => { this.heartBeat(); }, 60000);
-            	}
+           	   if (this.started) {
+            	 var lastActivity = new Date().getTime() - this.lastChange.getTime();
+            	 if (lastActivity > 5*60*1000 - 5000) {
+            	   // learning activity has been abandoned
+            	   location.reload();
+            	 }
+            	 else {
+            	   // learning activity is in progress
+            	   axios.post('/start-session', {sessionType: 'read', start: new Date()});
+            	   setTimeout(() => { this.heartBeat(); }, 60000);
+            	 }
+           	   }
              },
         	 start: function() {
         	   if (!this.started) {
         		 this.started = true;
+        		 this.lastChange = new Date();
+        		 console.log('getLesson before call');
+                 axios.get('/get-lesson')
+                      .then(function (response) {
+                        console.log('getLesson call data');
+                        console.log(response.data.words);
+                        v.syllables = response.data.words;
+                      })
+                      .catch(function (error) {
+                        console.log('getLesson error');
+                        console.log(error);
+                      });
                  console.log('start: show=' + this.show);
                  // this triggers the animation for the next item
                  this.show = false;
@@ -55,7 +69,6 @@
                console.log('sendStats before call');
                setTimeout(() => {axios.post('/send-stats', this.syllables[this.idx]) });
                
-               
                // this triggers the animation for the next item
                this.show = false;
              },
@@ -63,17 +76,26 @@
                console.log('afterLeave1  show=' + this.show +'   this.idx=' + this.idx + '    this.syllables.length='+ this.syllables.length);
                this.idx = this.idx + 1;
                console.log('afterLeave2  show=' + this.show +'   this.idx=' + this.idx + '    this.syllables.length='+ this.syllables.length);
+               
                if (this.idx == this.syllables.length) {
-                 this.idx = 0;
+            	 // lession is complete
+               	 axios.post('/stop-session', {sessionType: 'read', stop: new Date()});
+               	 this.started = false;
+               	 this.idx = -1;
+               	 this.message = 'Bravo! La lesson est finie!';
+                 this.show = true;
                }
-               console.log('afterLeave3  show=' + this.show +'   this.idx=' + this.idx + '    this.syllables.length='+ this.syllables.length);
-      
-               //this.show = false;
-               this.message = this.syllables[this.idx].text;
-               console.log('this.message = ' + this.syllables[this.idx].text);
-               this.show = true;
-               this.syllables[this.idx].started = new Date(new Date().getTime() + 1000);  // 1 second extra to account for animation
-               this.lastChange = new Date();
+               else {
+            	 // continue lesson with next word
+                 console.log('afterLeave3  show=' + this.show +'   this.idx=' + this.idx + '    this.syllables.length='+ this.syllables.length);
+                 
+                 //this.show = false;
+                 this.message = this.syllables[this.idx].text;
+                 console.log('this.message = ' + this.syllables[this.idx].text);
+                 this.show = true;
+                 this.syllables[this.idx].started = new Date(new Date().getTime() + 1000);  // 1 second extra to account for animation
+                 this.lastChange = new Date();
+               }
              },
              listenKeyPress: function(event) {
            	   console.log('key pressed: ' + event.which)
@@ -87,19 +109,6 @@
            	   }   
              }
            },
-           beforeCreate : function() {
-               console.log('getLesson before call');
-               axios.get('/get-lesson')
-                    .then(function (response) {
-                      console.log('getLesson call data');
-                      console.log(response.data.words);
-                      v.syllables = response.data.words;
-                    })
-                    .catch(function (error) {
-                      console.log('getLesson error');
-                      console.log(error);
-                    });
-             },
            created: function () {
              window.addEventListener('keyup', this.listenKeyPress)
            }

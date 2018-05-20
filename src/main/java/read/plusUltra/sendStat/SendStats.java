@@ -27,7 +27,7 @@ public class SendStats {
 	}
 
 	@PostMapping("/send-stats")
-	public void sendStats(@RequestBody SendStatsRequest request) {
+	public String sendStats(@RequestBody SendStatsRequest request) {
 		log.debug("send-stats");
 		
 		SqlParameterSource in = new MapSqlParameterSource()
@@ -39,6 +39,6 @@ public class SendStats {
 				.addValue("I_READ", request.isReadSuccessfully() ? '+' : '-');
 				
 		call.execute(in);
-		
+		return "{}";
 	}
 }

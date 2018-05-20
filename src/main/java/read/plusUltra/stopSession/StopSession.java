@@ -1,4 +1,4 @@
-package read.plusUltra.startSession;
+package read.plusUltra.stopSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,30 +13,31 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-public class StartSession {
+public class StopSession {
 
-		private static final Logger log = LoggerFactory.getLogger(StartSession.class);
+		private static final Logger log = LoggerFactory.getLogger(StopSession.class);
 
 		private final SimpleJdbcCall call;
 
 		@Autowired
-		public StartSession(JdbcTemplate jdbcTemplate) {
+		public StopSession(JdbcTemplate jdbcTemplate) {
 			this.call = new SimpleJdbcCall(jdbcTemplate)
 							.withSchemaName("plus_ultra")
 							.withCatalogName("read")
-							.withProcedureName("start_session");
+							.withProcedureName("stop_session");
 		}
 
-		@PostMapping("/start-session")
-		public String sendStats(@RequestBody StartSessionRequest request) {
-			log.debug("start-session");
+		@PostMapping("/stop-session")
+		public String sendStats(@RequestBody StopSessionRequest request) {
+			log.debug("stop-session");
 			
 			SqlParameterSource in = new MapSqlParameterSource()
 					.addValue("I_SESSION_TYPE", request.getSessionType())
-					.addValue("I_START", request.getStart());
+					.addValue("I_STOP", request.getStop());
 					
 			call.execute(in);
 			return "{}";
 		}
 
 }
+
