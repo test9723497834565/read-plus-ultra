@@ -40,7 +40,7 @@ create or replace package body plus_ultra.read as
        
         -- copy some rows from words_to_read and insert them into words and syllables.
         for rec in (select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from (
-                 select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from words_to_read order by freq desc
+                 select id, s1, s2, s3, s4, s5, s6, s7, s8, s9 from words_to_read where copied = 'N' order by freq desc
                   ) a where rownum < c_words_per_level
         ) loop
           update words_to_read set copied = 'Y' where id = rec.id;
@@ -67,6 +67,8 @@ create or replace package body plus_ultra.read as
       );
     end if;
     
+    commit;
+    
     open o_words for
       select id, text, c_syllable type from (
         -- select syllables to be studied in level
@@ -76,7 +78,7 @@ create or replace package body plus_ultra.read as
         join syllable c on (b.syllable_id = c.id)
         where a.read_level_id = l_level
         and c.mastered != c_mastered
-        and 1 != (select count(*) from word_syllable where word_id = a.id)
+        --and 1 != (select count(*) from word_syllable where word_id = a.id)
         group by c.id, c.text
         order by mastered, last_studied
       )
@@ -89,7 +91,8 @@ create or replace package body plus_ultra.read as
         join word_syllable b on (a.id = b.word_id)
         join syllable c on (b.syllable_id = c.id)
         where a.read_level_id = l_level
-        and a.mastered != c_mastered
+        and a.mastered != c_mastered   -- only stidy words not mastered
+        and c.mastered = c_mastered    -- only study words whose syllables have been mastered
         group by a.id, a.mastered, a.last_studied
         order by a.mastered, a.last_studied
     );
@@ -137,7 +140,7 @@ create or replace package body plus_ultra.read as
     case i_type
       when c_word then
         update word set last_studied = sysdate, mastered = l_mastered where id = i_id;
-        update syllable set last_studied = sysdate where id in (select syllable_id from word_syllable where word_id = i_id);
+        update syllable set last_studied = sysdate, mastered = l_mastered where id in (select syllable_id from word_syllable where word_id = i_id);
       when c_syllable then
         update syllable set last_studied = sysdate, mastered = l_mastered where id = i_id;
       else null;
@@ -174,22 +177,27 @@ create or replace package body plus_ultra.read as
       select rowid, coalesce(time_end_temp, time_start) bulk collect into l_past_sessions
       from session_stat where session_type = i_session_type and time_end is null order by time_start;
       
-      for rec in l_past_sessions.first..l_past_sessions.last-1 loop
-        update session_stat set time_end = time_start where rowid = l_past_sessions(rec).row_id;
-      end loop;
+      if l_past_sessions.count > 0 then
+        -- a session is still ongoing
+        for rec in l_past_sessions.first..l_past_sessions.last-1 loop
+          update session_stat set time_end = time_start where rowid = l_past_sessions(rec).row_id;
+        end loop;
       
-      l_row_id := l_past_sessions(l_past_sessions.last).row_id;
-      l_last_time := l_past_sessions(l_past_sessions.last).last_time;
-      
+        l_row_id := l_past_sessions(l_past_sessions.last).row_id;
+        l_last_time := l_past_sessions(l_past_sessions.last).last_time;
               
-      l_sec_elpased := (i_start - l_last_time) * 24.0 * 60.0 * 60.0;
+        l_sec_elpased := (i_start - l_last_time) * 24.0 * 60.0 * 60.0;
       
-      if l_sec_elpased < 70 then
-        -- update last time
-        update session_stat set time_end_temp = i_start where rowid = l_row_id;
+        if l_sec_elpased < 70 then
+          -- update last time
+          update session_stat set time_end_temp = i_start where rowid = l_row_id;
+        else
+          -- close last session
+          update session_stat set time_end = time_end_temp where rowid = l_row_id;
+          insert into session_stat (session_type, time_start) values (i_session_type, i_start);
+        end if;
       else
-        -- close last session
-        update session_stat set time_end = time_end_temp where rowid = l_row_id;
+        -- covers the case where the session is already closed
         insert into session_stat (session_type, time_start) values (i_session_type, i_start);
       end if;
       
@@ -210,13 +218,21 @@ create or replace package body plus_ultra.read as
 	 ,i_stop             date
   )
   is
-    l_row_id        rowid;
-    l_last_time     date;
-    l_sec_elpased   number;
-    
+    l_count_syllable    number;
+    l_count_word        number;
   begin
+    -- check is level has been completed
+    if i_session_type = 'read' then
+      select count(*) into l_count_syllable from syllable where mastered != c_mastered;
+      select count(*) into l_count_word from word where mastered != c_mastered;
+      
+      if l_count_word + l_count_syllable = 0 then
+        update read_level set ended = i_stop where ended is null;
+      end if;
+    end if;
+  
     -- close last session
-    update session_stat set time_end = i_stop where session_type = i_session_type;
+    update session_stat set time_end = i_stop where session_type = i_session_type and time_end is null;
     commit;
   exception
     when others then
