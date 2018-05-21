@@ -238,7 +238,29 @@ create or replace package body plus_ultra.read as
     when others then
       raise;
   end stop_session;
-
+  
+  procedure get_workload(
+    i_session_type        varchar2
+   ,i_period              number  
+   ,o_workload     in out sys_refcursor
+  )
+  is
+  begin
+    open o_workload for
+      with calendar as (
+        select trunc(sysdate) - (i_period - 1) + rownum as day
+        from dual
+        connect by rownum < i_period
+      )
+      select a.day, coalesce(round(sum((coalesce(time_end, time_end_temp)-time_start) * 60.0 * 24.0 )), 0) minute
+      from calendar a left outer join session_stat b on a.day = trunc(b.time_start) and session_type = i_session_type
+      group by a.day
+      order by a.day;
+  exception
+    when others then
+      raise;
+  end get_workload;
+  
 end read;
 
 

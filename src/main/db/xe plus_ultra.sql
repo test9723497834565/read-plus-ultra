@@ -38,14 +38,21 @@ update words_to_read set copied = 'N' where copied = 'Y';
 
 select * from words_to_read order by freq desc;
 
-update words_to_read set s1 = 'est' where s1 = 'être' and s2 = null;
-update words_to_read set s1 = 'as', s2= null where s1 = 'a' and s2 = 'voir' and s3 = null;
-update words_to_read set s1 = 'fais' where s1 = 'faire' and s2 = null and s3 = null;
-update words_to_read set s1 = 'dis' where s1 = 'dire' and s2 = null and s3 = null;
-update words_to_read set s1 = 'peux', s2=null where s1 = 'pou' and s2 = 'voir' and s3 = null;
-update words_to_read set s1 = 'sais', s2=null where s1 = 'sa' and s2 = 'voir' and s3 = null;
-update words_to_read set s1 = 'suis' where s1 = 'sui' and s2 = 'vre' and s3 = null;
-update words_to_read set s1 = 'prend' where s1 = 'prendre' and s2 = null and s3 = null;
-update words_to_read set s1 = 'crois' where s1 = 'croire' and s2 = null and s3 = null;
 
+with calendar as (
+  select trunc(sysdate)-89 + rownum as day
+  from dual
+  connect by rownum < 90
+)
+select a.day, coalesce(round(sum((coalesce(time_end, time_end_temp)-time_start) * 60.0 * 24.0 )),0) minutes
+from calendar a left outer join session_stat b on a.day = trunc(b.time_start) and session_type = 'read'
+group by a.day
+order by a.day;
 
+with calendar as (
+        select to_date('01_01_2018','dd_mm_yyyy') + rownum - 1 as day
+        from dual
+        connect by rownum < to_date('01_03_2018','dd_mm_yyyy') - to_date('01_01_2018','dd_mm_yyyy')
+    )
+select rownum as "S.No", to_date(day,'dd_mm_yyyy') as "Cal_Dt", to_char(day,'day') as "DayName"
+from calendar

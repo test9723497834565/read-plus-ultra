@@ -29,5 +29,11 @@ create or replace package plus_ultra.read as
 	  i_session_type     varchar2
 	 ,i_stop             date
   );
+  
+  procedure get_workload(
+    i_session_type        varchar2
+   ,i_period              number  
+   ,o_workload     in out sys_refcursor
+  );
 
 end read;

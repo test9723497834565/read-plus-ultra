@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plus Ultra! Workload</title>
+  <style>
+  canvas {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+  }
+  </style> 
+  <script type="text/javascript" src="/webjars/axios/dist/axios.min.js"></script> 
+  <script type="text/javascript" src="/webjars/chart.js/dist/Chart.bundle.min.js"></script>
+  
+</head>
+<body>
+  <div style="width: 40%">
+    <canvas id="canvas"></canvas>
+  </div>
+  
+  <script>
+    axios.get('/get-workload')
+         .then(function (response) {
+           console.log('getWorkLoad call data');
+           console.log(response.data);
+           
+           var ctx = document.getElementById('canvas').getContext('2d');
+           window.myBar = new Chart(ctx, {
+             type: 'bar',
+             data: response.data,
+             options: {
+               title: {
+                 display: true,
+                 text: 'Minutes travaillées par jour'
+               },
+               tooltips: {
+                 mode: 'index',
+                 intersect: false
+               },
+               responsive: true,
+               scales: {
+                 xAxes: [{
+                   stacked: true,
+                 }],
+                 yAxes: [{
+                   stacked: true
+                 }]
+               }
+             }
+           });
+         })
+         .catch(function (error) {
+           console.log('getWorkLoad error');
+           console.log(error);
+         });
+  </script>
+  
+</body>
+</html>

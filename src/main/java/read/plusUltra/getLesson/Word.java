@@ -11,7 +11,6 @@ public class Word {
 	}
 
 	public Word(int id, String text, String type) {
-		super();
 		this.id = id;
 		this.text = text;
 		this.type = type;
