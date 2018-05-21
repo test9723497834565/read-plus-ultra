@@ -43,7 +43,7 @@ public class GetWorkLoad {
 	
 	private List<String> getLables(List<GetWorkLoadResultSet> result) {
 		List<String> labels = new ArrayList<String>();
-		SimpleDateFormat sdf = new SimpleDateFormat("d mm",Locale.FRANCE);
+		SimpleDateFormat sdf = new SimpleDateFormat("d MMM",Locale.FRANCE);
 		
 		for (GetWorkLoadResultSet res : result) {
 			labels.add(sdf.format(res.getDay()));
