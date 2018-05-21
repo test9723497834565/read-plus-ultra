@@ -10737,3 +10737,13 @@ insert into plus_ultra.words_to_read (id,s1,s2,s3,s4,s5,s6,s7,s8,s9) values(word
 commit;
 update plus_ultra.words_to_read set copied = 'N';
 commit;
+update words_to_read set s1 = 'est' where s1 = 'être' and s2 = null;
+update words_to_read set s1 = 'as', s2= null where s1 = 'a' and s2 = 'voir' and s3 = null;
+update words_to_read set s1 = 'fais' where s1 = 'faire' and s2 = null and s3 = null;
+update words_to_read set s1 = 'dis' where s1 = 'dire' and s2 = null and s3 = null;
+update words_to_read set s1 = 'peux', s2=null where s1 = 'pou' and s2 = 'voir' and s3 = null;
+update words_to_read set s1 = 'sais', s2=null where s1 = 'sa' and s2 = 'voir' and s3 = null;
+update words_to_read set s1 = 'suis' where s1 = 'sui' and s2 = 'vre' and s3 = null;
+update words_to_read set s1 = 'prend' where s1 = 'prendre' and s2 = null and s3 = null;
+update words_to_read set s1 = 'crois' where s1 = 'croire' and s2 = null and s3 = null;
+commit;
