@@ -36,23 +36,4 @@ delete from read_level;
 update words_to_read set copied = 'N' where copied = 'Y';
 
 
-select * from words_to_read order by freq desc;
-
-
-with calendar as (
-  select trunc(sysdate)-89 + rownum as day
-  from dual
-  connect by rownum < 90
-)
-select a.day, coalesce(round(sum((coalesce(time_end, time_end_temp)-time_start) * 60.0 * 24.0 )),0) minutes
-from calendar a left outer join session_stat b on a.day = trunc(b.time_start) and session_type = 'read'
-group by a.day
-order by a.day;
-
-with calendar as (
-        select to_date('01_01_2018','dd_mm_yyyy') + rownum - 1 as day
-        from dual
-        connect by rownum < to_date('01_03_2018','dd_mm_yyyy') - to_date('01_01_2018','dd_mm_yyyy')
-    )
-select rownum as "S.No", to_date(day,'dd_mm_yyyy') as "Cal_Dt", to_char(day,'day') as "DayName"
-from calendar
+select * from session_stat

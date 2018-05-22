@@ -7,12 +7,19 @@
   <link rel="stylesheet" href="/webjars/bulma/css/bulma.min.css">
   <link href="/webjars/animate.css/animate.min.css" rel="stylesheet" type="text/css">
   
+  <style type="text/css">
+    @font-face {
+        font-family: nicefont;
+        src: url("./font/font.woff") format("woff");
+    }
+  </style>
+  
   <script type="text/javascript" src="/webjars/font-awesome/svg-with-js/js/fontawesome-all.min.js"></script>  
   <script type="text/javascript" src="/webjars/axios/dist/axios.min.js"></script> 
   <script type="text/javascript" src="/webjars/vue/dist/vue.min.js"></script>
   
-   <script type="text/javascript">
-      var v;
+  <script type="text/javascript">
+	      var v;
       window.onload = function () { 
         v = new Vue({
            el: '#app',
@@ -137,7 +144,7 @@
                leave-active-class="animated fadeOutLeft"
                v-on:after-leave="afterLeave"
             >
-               <p v-if="show" class="is-size-1 has-text-centered has-text-weight-bold">{{ message }}</p>  
+               <p v-if="show" class="is-size-1 has-text-centered has-text-weight-bold" style="font-family:nicefont">{{ message }}</p>  
             </transition>
           </div>
           <div class="column"></div>
