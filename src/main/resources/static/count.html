@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Plus Ultra!</title>
+  <title>Plus Ultra! Count</title>
   <link rel="stylesheet" href="/webjars/bulma/css/bulma.min.css">
   <link href="/webjars/animate.css/animate.min.css" rel="stylesheet" type="text/css">
   
@@ -19,15 +19,27 @@
   <script type="text/javascript" src="/webjars/vue/dist/vue.min.js"></script>
   
   <script type="text/javascript">
-	      var v;
+  
+    function sleepPromise(ms) {
+	  return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
+	async function sleep(ms) {
+	  console.log('Taking a break...');
+	  await sleepPromise(ms);
+	  console.log('Two second later');
+	}
+
+	  var v;
       window.onload = function () { 
         v = new Vue({
            el: '#app',
            data: {
-             message: '',
+             operation: '',
+             result: '',
              show:    true,
              idx:     -1,
-             syllables: null,
+             operations: null,
              started: false,
              lastChange: new Date()
            },
@@ -51,11 +63,11 @@
         		 this.started = true;
         		 this.lastChange = new Date();
         		 console.log('getLesson before call');
-                 axios.get('/get-lesson')
+                 axios.get('/get-lesson-count')
                       .then(function (response) {
                         console.log('getLesson call data');
                         console.log(response.data.words);
-                        v.syllables = response.data.words;
+                        v.operations = response.data.words;
                       })
                       .catch(function (error) {
                         console.log('getLesson error');
@@ -69,51 +81,72 @@
              },
              next: function(success) {
                console.log('next: show=' + this.show + "  success=" + success);
-               
-               this.syllables[this.idx].ended = new Date();
-               this.syllables[this.idx].readSuccessfully = success;
+               this.result = '';
+               this.operations[this.idx].ended = new Date();
+               this.operations[this.idx].computedSuccessfully = success;
                
                console.log('sendStats before call');
-               setTimeout(() => {axios.post('/send-stats', this.syllables[this.idx]) });
+               setTimeout(() => {axios.post('/send-stats', this.operations[this.idx]) });
                
                // this triggers the animation for the next item
                this.show = false;
              },
              afterLeave: function () {
-               console.log('afterLeave1  show=' + this.show +'   this.idx=' + this.idx + '    this.syllables.length='+ this.syllables.length);
+               console.log('afterLeave1  show=' + this.show +'   this.idx=' + this.idx + '    this.operations.length='+ this.operations.length);
                this.idx = this.idx + 1;
-               console.log('afterLeave2  show=' + this.show +'   this.idx=' + this.idx + '    this.syllables.length='+ this.syllables.length);
+               console.log('afterLeave2  show=' + this.show +'   this.idx=' + this.idx + '    this.operations.length='+ this.operations.length);
                
-               if (this.idx == this.syllables.length) {
+               if (this.idx == this.operations.length) {
             	 // lession is complete
                	 axios.post('/stop-session', {sessionType: 'read', stop: new Date()});
                	 this.started = false;
                	 this.idx = -1;
-               	 this.message = 'Bravo! La lesson est finie!';
+               	 this.operation = 'Bravo! La lesson est finie!';
                  this.show = true;
                }
                else {
             	 // continue lesson with next word
-                 console.log('afterLeave3  show=' + this.show +'   this.idx=' + this.idx + '    this.syllables.length='+ this.syllables.length);
+                 console.log('afterLeave3  show=' + this.show +'   this.idx=' + this.idx + '    this.operations.length='+ this.operations.length);
                  
                  //this.show = false;
-                 this.message = this.syllables[this.idx].text;
-                 console.log('this.message = ' + this.syllables[this.idx].text);
+                 this.operation = this.operations[this.idx].text;
+                 console.log('this.operation = ' + this.operations[this.idx].text);
                  this.show = true;
-                 this.syllables[this.idx].started = new Date(new Date().getTime() + 1000);  // 1 second extra to account for animation
+                 this.operations[this.idx].started = new Date(new Date().getTime() + 1000);  // 1 second extra to account for animation
                  this.lastChange = new Date();
                }
              },
              listenKeyPress: function(event) {
-           	   console.log('key pressed: ' + event.which)
-           	   switch (event.which) {
-           	     case 78: // n : non, il n'a pas réussi à lire
-           	    	this.next(false); break;
-           	     case 79: // o : oui, il a réussi à lire
-           	    	this.next(true); break;
-           	     default: 
-           	    	 null;
-           	   }   
+           	   console.log('key pressed: ' + event.which);
+           	   // nums keypad 96 - 105
+           	   // num         48 - 57
+           	   if (event.which >= 96 && event.which <= 105) || (event.which >= 48 && event.which <= 57) {
+           		 // number
+           		 if (length(this.result) === 2) {
+           		   this.result = this.result.substring(0, 1);
+           		 }
+           		 
+           	     this.result = this.result + String(event.key);
+           	   }
+           	   // enter 13
+           	   else if (event.which === 13) {  
+           		   if (String(this.operations[this.idx].result) === this.result) {
+           		     // result ok
+           		     next(true);
+           		   }
+           		   else {
+           			 // result no ok
+           			 this.result = ' ⚠  ' + String(this.operations[this.idx].result) + '  ⚠';
+           			 sleep(5000);
+           			 next(false);
+           		   }
+           	   }
+           	   // delete  8   or   minus 108
+           	   else if (event.which === 13) {
+           		 if (length(this.result) > 0) {
+                   this.result = this.result.substring(0, 1);
+                 }
+           	   }
              }
            },
            created: function () {
@@ -144,10 +177,10 @@
                leave-active-class="animated fadeOutLeft"
                v-on:after-leave="afterLeave"
             >
-               <p v-if="show" class="is-size-1 has-text-centered has-text-weight-bold" style="font-family:nicefont">{{ message }}</p>  
+               <p v-if="show" class="is-size-1 has-text-centered has-text-weight-bold" style="font-family:nicefont">{{ operation }}</p>  
             </transition>
           </div>
-          <div class="column"></div>
+          <div class="column">{{ result }}</div>
         </div>
       </div>
     </div>
