@@ -69,17 +69,21 @@ create or replace package body plus_ultra.read as
     
     commit;
     
+    dbms_random.SEED(sysdate);
+
     open o_words for
       select id, text, c_syllable type from (
         -- select syllables to be studied in level
-        select c.id, c.text, max(c.mastered) mastered, max(c.last_studied) last_studied
-        from word a 
-        join word_syllable b on (a.id = b.word_id)
-        join syllable c on (b.syllable_id = c.id)
-        where a.read_level_id = l_level
-        and c.mastered != c_mastered
-        --and 1 != (select count(*) from word_syllable where word_id = a.id)
-        group by c.id, c.text
+        select id, text, max(mastered) mastered, max(last_studied) last_studied from (
+          select c.id, c.text, c.mastered, c.last_studied + dbms_random.value(-5,5)/24.0/60.0 last_studied
+          from word a 
+          join word_syllable b on (a.id = b.word_id)
+          join syllable c on (b.syllable_id = c.id)
+          where a.read_level_id = l_level
+          and c.mastered != c_mastered
+          --and 1 != (select count(*) from word_syllable where word_id = a.id)
+          ) d
+        group by id, text
         order by mastered, last_studied
       )
     union all
@@ -91,7 +95,7 @@ create or replace package body plus_ultra.read as
         join word_syllable b on (a.id = b.word_id)
         join syllable c on (b.syllable_id = c.id)
         where a.read_level_id = l_level
-        and a.mastered != c_mastered   -- only stidy words not mastered
+        and a.mastered != c_mastered   -- only study words not mastered
         and c.mastered = c_mastered    -- only study words whose syllables have been mastered
         group by a.id, a.mastered, a.last_studied
         order by a.mastered, a.last_studied
