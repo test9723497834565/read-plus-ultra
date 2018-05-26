@@ -37,3 +37,11 @@ update words_to_read set copied = 'N' where copied = 'Y';
 
 
 select * from session_stat
+
+exec DBMS_RANDOM.SEED(sysdate);
+
+select sysdate + dbms_random.value(-5,5)/24.0/60.0 from dual;
+
+
+
+
